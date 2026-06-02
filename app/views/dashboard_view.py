@@ -9,6 +9,7 @@ import pandas as pd
 
 from app.models.state import FilterState, SortSpec
 from app.widgets.detail_panel import DetailPanel
+from app.widgets.dashboard_widgets import DashboardWidgetsPanel
 from app.widgets.filter_panel import FilterPanel
 from app.widgets.interactive_table import InteractiveTable
 from app.widgets.tooltip import ToolTip
@@ -34,24 +35,20 @@ class DashboardView:
         container = ttk.Frame(self.root)
         container.pack(fill="both", expand=True, padx=10, pady=8)
 
-        top_bar = ttk.Frame(container)
-        top_bar.pack(fill="x", pady=(0, 8))
+        self._top_bar = ttk.Frame(container)
+        self._top_bar.pack(fill="x", pady=(0, 8))
 
-        btn_fifa = ttk.Button(top_bar, text="FIFA", command=lambda: self._callbacks["dataset"]("fifa"))
-        btn_movie = ttk.Button(top_bar, text="Movies", command=lambda: self._callbacks["dataset"]("movie"))
-        btn_social = ttk.Button(top_bar, text="Social", command=lambda: self._callbacks["dataset"]("social"))
-        btn_back = ttk.Button(top_bar, text="Back", command=self._callbacks["back"])
-        btn_report = ttk.Button(top_bar, text="Generate & Open Sweetviz Report", command=self._callbacks["report"])
+        self._dataset_buttons_host = ttk.Frame(self._top_bar)
+        self._dataset_buttons_host.pack(side="left")
 
-        btn_fifa.pack(side="left", padx=4)
-        btn_movie.pack(side="left", padx=4)
-        btn_social.pack(side="left", padx=4)
+        actions_host = ttk.Frame(self._top_bar)
+        actions_host.pack(side="right")
+
+        btn_back = ttk.Button(actions_host, text="Back", command=self._callbacks["back"])
+        btn_report = ttk.Button(actions_host, text="Generate & Open Sweetviz Report", command=self._callbacks["report"])
+
         btn_back.pack(side="left", padx=8)
-        btn_report.pack(side="right", padx=4)
-
-        ToolTip(btn_fifa, "Switch to FIFA dataset")
-        ToolTip(btn_movie, "Switch to Movie dataset")
-        ToolTip(btn_social, "Switch to Social dataset")
+        btn_report.pack(side="left", padx=4)
         ToolTip(btn_report, "Generate Sweetviz report for current dataset")
 
         ttk.Label(container, textvariable=self._breadcrumb, font=("Segoe UI", 9)).pack(fill="x", pady=(0, 6))
@@ -78,11 +75,31 @@ class DashboardView:
         frame = ttk.Frame(self._dashboard_tab, padding=10)
         frame.pack(fill="both", expand=True)
 
-        ttk.Label(frame, textvariable=self._overview_title, font=("Segoe UI", 14, "bold")).pack(anchor="w")
-        ttk.Label(frame, textvariable=self._overview_body, justify="left").pack(anchor="w", pady=(4, 10))
+        paned = ttk.Panedwindow(frame, orient="vertical")
+        paned.pack(fill="both", expand=True)
 
-        self._chart_host = ttk.Frame(frame)
+        top = ttk.Frame(paned)
+        bottom = ttk.Frame(paned)
+        paned.add(top, weight=4)
+        paned.add(bottom, weight=3)
+
+        ttk.Label(top, textvariable=self._overview_title, font=("Segoe UI", 14, "bold")).pack(anchor="w")
+        ttk.Label(top, textvariable=self._overview_body, justify="left").pack(anchor="w", pady=(4, 10))
+
+        self._chart_host = ttk.Frame(top)
         self._chart_host.pack(fill="both", expand=True)
+
+        self.dashboard_widgets = DashboardWidgetsPanel(
+            bottom,
+            callbacks={
+                "add": self._callbacks["widget_add"],
+                "remove": self._callbacks["widget_remove"],
+                "move": self._callbacks["widget_move"],
+                "pin": self._callbacks["widget_pin"],
+                "resize": self._callbacks["widget_resize"],
+            },
+        )
+        self.dashboard_widgets.pack(fill="both", expand=True)
 
     def _build_table_tab(self) -> None:
         paned = ttk.Panedwindow(self._table_tab, orient="horizontal")
@@ -97,6 +114,7 @@ class DashboardView:
         self.filter_panel = FilterPanel(left, on_change=self._emit_filters_changed)
         self.filter_panel.pack(fill="both", expand=True, padx=8, pady=8)
         self.filter_panel.bind_categorical_value_updater(self._callbacks["filter_column_changed"])
+        self.filter_panel.bind_multi_value_updater(self._callbacks["multi_filter_column_changed"])
 
         self.table_widget = InteractiveTable(
             center,
@@ -217,15 +235,41 @@ class DashboardView:
         all_columns: list[str],
         categorical_columns: list[str],
         numeric_columns: list[str],
+        date_columns: list[str],
+        multi_columns: list[str],
         categorical_values: list[str],
+        multi_values: list[str],
     ) -> None:
-        self.filter_panel.configure_columns(all_columns, categorical_columns, numeric_columns, categorical_values)
+        self.filter_panel.configure_columns(
+            all_columns,
+            categorical_columns,
+            numeric_columns,
+            date_columns,
+            multi_columns,
+            categorical_values,
+            multi_values,
+        )
 
     def update_filter_values(self, values: list[str]) -> None:
         self.filter_panel.set_categorical_values(values)
 
+    def update_multi_filter_values(self, values: list[str]) -> None:
+        self.filter_panel.set_multi_values(values)
+
     def set_filter_state(self, state: FilterState) -> None:
         self.filter_panel.set_state(state)
+
+    def render_dashboard_widgets(self, widgets: list, df: pd.DataFrame) -> None:
+        self.dashboard_widgets.set_widgets(widgets, df)
+
+    def set_dataset_buttons(self, labels: dict[str, str]) -> None:
+        for child in list(self._dataset_buttons_host.winfo_children()):
+            child.destroy()
+
+        for key, label in labels.items():
+            button = ttk.Button(self._dataset_buttons_host, text=label, command=lambda selected=key: self._callbacks["dataset"](selected))
+            button.pack(side="left", padx=4)
+            ToolTip(button, f"Switch to {label} dataset")
 
     def show_detail(self, dataset_key: str, row: pd.Series) -> None:
         self.detail_panel.show_record(dataset_key, row)

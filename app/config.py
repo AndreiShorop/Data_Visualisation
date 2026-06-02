@@ -4,6 +4,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 REPORTS_DIR = BASE_DIR / "html_reports"
 SETTINGS_PATH = BASE_DIR / "data_visualization_settings.json"
+DATASETS_CONFIG_PATH = BASE_DIR / "datasets_config.json"
 
 FIFA_CSV = DATA_DIR / "FIFA" / "elo_ratings_wc2026.csv"
 MOVIE_CSV = DATA_DIR / "Movie" / "mymoviedb.csv"

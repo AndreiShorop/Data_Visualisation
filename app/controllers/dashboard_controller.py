@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import uuid
 
 import pandas as pd
 
-from app.models.state import AppState, FilterState, SortSpec
+from app.models.state import FilterState, SortSpec, WidgetConfig
 from app.services.metadata_service import MetadataService
 from app.services.preferences_service import PreferencesService
 from app.services.query_service import QueryService
@@ -14,12 +15,16 @@ class DashboardController:
     def __init__(
         self,
         datasets: dict[str, pd.DataFrame],
+        dataset_labels: dict[str, str],
+        schema_hints: dict[str, dict[str, list[str]]],
         preferences_service: PreferencesService,
         query_service: QueryService,
         metadata_service: MetadataService,
         on_generate_report: Callable[[str, pd.DataFrame], None],
     ) -> None:
         self._datasets = datasets
+        self._dataset_labels = dataset_labels
+        self._schema_hints = schema_hints
         self._preferences_service = preferences_service
         self._query_service = query_service
         self._metadata_service = metadata_service
@@ -34,6 +39,7 @@ class DashboardController:
     def bind_view(self, view: object) -> None:
         self._view = view
         self._view.set_window_geometry(self._state.window_geometry)
+        self._view.set_dataset_buttons(self._dataset_labels)
 
         selected = self._state.selected_dataset
         if selected not in self._datasets:
@@ -51,17 +57,25 @@ class DashboardController:
         self._state.selected_dataset = key
         source_df = self._datasets[key]
         dataset_state = self._state.get_dataset_state(key)
+        hints = self._schema_hints.get(key, {})
 
-        categorical_columns, numeric_columns = self._metadata_service.classify_columns(source_df)
+        categorical_columns, numeric_columns, date_columns, multi_columns = self._metadata_service.classify_columns(source_df, hints)
         category_values = self._metadata_service.categorical_values(source_df, dataset_state.filters.categorical_column)
+        multi_values = self._metadata_service.multi_values(source_df, dataset_state.filters.multi_select_column)
 
         self._view.set_filter_options(
             all_columns=[str(col) for col in source_df.columns],
             categorical_columns=categorical_columns,
             numeric_columns=numeric_columns,
+            date_columns=date_columns,
+            multi_columns=multi_columns,
             categorical_values=category_values,
+            multi_values=multi_values,
         )
         self._view.set_filter_state(dataset_state.filters)
+
+        if not dataset_state.dashboard_widgets:
+            dataset_state.dashboard_widgets = self._default_widgets()
 
         self._refresh_table_and_charts()
         self._view.select_tab(self._state.current_page)
@@ -71,6 +85,12 @@ class DashboardController:
         source_df = self._datasets[key]
         values = self._metadata_service.categorical_values(source_df, column)
         self._view.update_filter_values(values)
+
+    def on_multi_filter_column_changed(self, column: str) -> None:
+        key = self._state.selected_dataset
+        source_df = self._datasets[key]
+        values = self._metadata_service.multi_values(source_df, column)
+        self._view.update_multi_filter_values(values)
 
     def on_filters_changed(self, filters: FilterState) -> None:
         key = self._state.selected_dataset
@@ -96,8 +116,28 @@ class DashboardController:
     def on_chart_item_clicked(self, filter_column: str, filter_value: str) -> None:
         key = self._state.selected_dataset
         dataset_state = self._state.get_dataset_state(key)
-        dataset_state.filters.categorical_column = filter_column
-        dataset_state.filters.categorical_value = filter_value
+
+        if filter_column == "risk_tier":
+            dataset_state.filters.numeric_column = "addiction_score"
+            if filter_value == "Low":
+                dataset_state.filters.min_value = ""
+                dataset_state.filters.max_value = "55"
+            elif filter_value == "Moderate":
+                dataset_state.filters.min_value = "55"
+                dataset_state.filters.max_value = "60"
+            elif filter_value == "High":
+                dataset_state.filters.min_value = "60"
+                dataset_state.filters.max_value = "65"
+            else:
+                dataset_state.filters.min_value = "65"
+                dataset_state.filters.max_value = ""
+            dataset_state.filters.categorical_column = ""
+            dataset_state.filters.categorical_value = ""
+        else:
+            dataset_state.filters.categorical_column = filter_column
+            dataset_state.filters.categorical_value = filter_value
+            if filter_column == dataset_state.filters.multi_select_column:
+                dataset_state.filters.multi_select_values = [filter_value]
 
         source_df = self._datasets[key]
         values = self._metadata_service.categorical_values(source_df, filter_column)
@@ -124,6 +164,52 @@ class DashboardController:
         self._state.current_page = tab_name
         self._view.set_breadcrumb(f"Dashboard > {tab_name}")
 
+    def on_widget_add(self, widget_type: str, title: str) -> None:
+        dataset_state = self._state.get_dataset_state(self._state.selected_dataset)
+        dataset_state.dashboard_widgets.append(
+            WidgetConfig(
+                widget_id=str(uuid.uuid4()),
+                title=title,
+                widget_type=widget_type,
+                size="medium",
+            )
+        )
+        self._refresh_dashboard_widgets()
+
+    def on_widget_remove(self, widget_id: str) -> None:
+        dataset_state = self._state.get_dataset_state(self._state.selected_dataset)
+        dataset_state.dashboard_widgets = [w for w in dataset_state.dashboard_widgets if w.widget_id != widget_id]
+        self._refresh_dashboard_widgets()
+
+    def on_widget_move(self, widget_id: str, delta: int) -> None:
+        dataset_state = self._state.get_dataset_state(self._state.selected_dataset)
+        widgets = dataset_state.dashboard_widgets
+        index = next((i for i, w in enumerate(widgets) if w.widget_id == widget_id), None)
+        if index is None:
+            return
+        new_index = max(0, min(len(widgets) - 1, index + delta))
+        if new_index == index:
+            return
+        widgets[index], widgets[new_index] = widgets[new_index], widgets[index]
+        self._refresh_dashboard_widgets()
+
+    def on_widget_pin_toggle(self, widget_id: str) -> None:
+        dataset_state = self._state.get_dataset_state(self._state.selected_dataset)
+        for widget in dataset_state.dashboard_widgets:
+            if widget.widget_id == widget_id:
+                widget.pinned = not widget.pinned
+                break
+        self._refresh_dashboard_widgets()
+
+    def on_widget_resize(self, widget_id: str) -> None:
+        cycle = {"small": "medium", "medium": "large", "large": "small"}
+        dataset_state = self._state.get_dataset_state(self._state.selected_dataset)
+        for widget in dataset_state.dashboard_widgets:
+            if widget.widget_id == widget_id:
+                widget.size = cycle.get(widget.size, "medium")
+                break
+        self._refresh_dashboard_widgets()
+
     def shutdown(self, window_geometry: str) -> None:
         self._state.window_geometry = window_geometry
         self._preferences_service.save(self._state)
@@ -143,8 +229,14 @@ class DashboardController:
         visible_columns = dataset_state.visible_columns or [str(c) for c in source_df.columns]
         self._view.set_overview(self._build_summary_text(key, filtered), key)
         self._view.render_charts(key, filtered)
+        self._view.render_dashboard_widgets(dataset_state.dashboard_widgets, filtered)
         self._view.set_table(filtered, visible_columns, dataset_state.sort_specs)
         self._view.set_breadcrumb(f"Dashboard > {self._state.current_page} ({key.title()})")
+
+    def _refresh_dashboard_widgets(self) -> None:
+        key = self._state.selected_dataset
+        dataset_state = self._state.get_dataset_state(key)
+        self._view.render_dashboard_widgets(dataset_state.dashboard_widgets, self._current_df)
 
     def _refresh_table_only(self) -> None:
         key = self._state.selected_dataset
@@ -172,3 +264,11 @@ class DashboardController:
         sleep = f"{avg_sleep:.2f}" if pd.notna(avg_sleep) else "N/A"
         countries = df["country"].nunique() if "country" in df.columns else 0
         return f"Rows: {len(df):,} | Columns: {df.shape[1]} | Countries: {countries}\nAverage Addiction Score: {add} | Average Sleep Hours: {sleep}"
+
+    def _default_widgets(self) -> list[WidgetConfig]:
+        return [
+            WidgetConfig(widget_id=str(uuid.uuid4()), title="Rows KPI", widget_type="kpi_rows", size="small", pinned=True),
+            WidgetConfig(widget_id=str(uuid.uuid4()), title="Columns KPI", widget_type="kpi_columns", size="small"),
+            WidgetConfig(widget_id=str(uuid.uuid4()), title="Missing Values KPI", widget_type="kpi_missing", size="small"),
+            WidgetConfig(widget_id=str(uuid.uuid4()), title="Table Preview", widget_type="table_preview", size="medium"),
+        ]

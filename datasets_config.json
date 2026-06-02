@@ -1,0 +1,40 @@
+{
+  "datasets": [
+    {
+      "key": "fifa",
+      "label": "FIFA",
+      "csv_path": "data/FIFA/elo_ratings_wc2026.csv",
+      "report_path": "html_reports/fifa_dashboard.html",
+      "read_csv_options": {},
+      "schema": {
+        "date_columns": ["snapshot_date"],
+        "multi_value_columns": []
+      }
+    },
+    {
+      "key": "movie",
+      "label": "Movies",
+      "csv_path": "data/Movie/mymoviedb.csv",
+      "report_path": "html_reports/movie_dashboard.html",
+      "read_csv_options": {
+        "engine": "python",
+        "on_bad_lines": "skip"
+      },
+      "schema": {
+        "date_columns": ["Release_Date"],
+        "multi_value_columns": ["Genre"]
+      }
+    },
+    {
+      "key": "social",
+      "label": "Social",
+      "csv_path": "data/Social_Media_Addiction/country_wise_analysis_addiction.csv",
+      "report_path": "html_reports/social_media_addiction_dashboard.html",
+      "read_csv_options": {},
+      "schema": {
+        "date_columns": [],
+        "multi_value_columns": []
+      }
+    }
+  ]
+}

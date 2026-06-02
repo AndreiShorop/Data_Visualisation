@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from app.models.state import AppState, DatasetViewState, FilterState, SortSpec
+from app.models.state import AppState, DatasetViewState, FilterState, SortSpec, WidgetConfig
 
 
 class PreferencesService:
@@ -35,14 +35,34 @@ class PreferencesService:
                 text_query=raw_filters.get("text_query", ""),
                 categorical_column=raw_filters.get("categorical_column", ""),
                 categorical_value=raw_filters.get("categorical_value", ""),
+                multi_select_column=raw_filters.get("multi_select_column", ""),
+                multi_select_values=list(raw_filters.get("multi_select_values", [])),
                 numeric_column=raw_filters.get("numeric_column", ""),
                 min_value=raw_filters.get("min_value", ""),
                 max_value=raw_filters.get("max_value", ""),
+                date_column=raw_filters.get("date_column", ""),
+                start_date=raw_filters.get("start_date", ""),
+                end_date=raw_filters.get("end_date", ""),
             )
+
+            raw_widgets = value.get("dashboard_widgets", [])
+            widgets = [
+                WidgetConfig(
+                    widget_id=item.get("widget_id", ""),
+                    title=item.get("title", ""),
+                    widget_type=item.get("widget_type", "metric"),
+                    size=item.get("size", "medium"),
+                    pinned=bool(item.get("pinned", False)),
+                    visible=bool(item.get("visible", True)),
+                )
+                for item in raw_widgets
+                if item.get("widget_id")
+            ]
             state.dataset_states[key] = DatasetViewState(
                 visible_columns=list(value.get("visible_columns", [])),
                 sort_specs=sort_specs,
                 filters=filters,
+                dashboard_widgets=widgets,
             )
         return state
 

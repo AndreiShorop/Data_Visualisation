@@ -18,7 +18,9 @@ class QueryService:
 
         df = self._apply_text_filter(df, filters.text_query)
         df = self._apply_categorical_filter(df, filters.categorical_column, filters.categorical_value)
+        df = self._apply_multi_select_filter(df, filters.multi_select_column, filters.multi_select_values)
         df = self._apply_numeric_range(df, filters.numeric_column, filters.min_value, filters.max_value)
+        df = self._apply_date_range(df, filters.date_column, filters.start_date, filters.end_date)
         df = self._apply_sorts(df, sorts)
         return df
 
@@ -70,6 +72,47 @@ class QueryService:
 
         result = result.drop(columns=["__num__"])
         return result
+
+    def _apply_date_range(self, df: pd.DataFrame, column: str, start_date: str, end_date: str) -> pd.DataFrame:
+        if not column or column not in df.columns:
+            return df
+
+        parsed = pd.to_datetime(df[column], errors="coerce")
+        result = df.copy()
+        result["__date__"] = parsed
+
+        if start_date.strip():
+            try:
+                start = pd.to_datetime(start_date)
+                result = result[result["__date__"] >= start]
+            except (ValueError, TypeError):
+                pass
+
+        if end_date.strip():
+            try:
+                end = pd.to_datetime(end_date)
+                result = result[result["__date__"] <= end]
+            except (ValueError, TypeError):
+                pass
+
+        result = result.drop(columns=["__date__"])
+        return result
+
+    def _apply_multi_select_filter(self, df: pd.DataFrame, column: str, values: list[str]) -> pd.DataFrame:
+        if not column or column not in df.columns or not values:
+            return df
+
+        target = set(values)
+        series = df[column].astype(str)
+
+        exact_mask = series.isin(target)
+        if exact_mask.any():
+            return df[exact_mask]
+
+        token_mask = series.str.split(",").apply(
+            lambda tokens: bool(target.intersection({token.strip() for token in tokens if token.strip()}))
+        )
+        return df[token_mask]
 
     def _apply_sorts(self, df: pd.DataFrame, sorts: Sequence[SortSpec]) -> pd.DataFrame:
         valid = [spec for spec in sorts if spec.column in df.columns]

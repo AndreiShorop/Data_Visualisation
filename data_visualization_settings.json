@@ -1,7 +1,7 @@
 {
-  "selected_dataset": "fifa",
-  "window_geometry": "1920x1009+-8+-8",
-  "current_page": "Details",
+  "selected_dataset": "social",
+  "window_geometry": "1924x1009+-8+0",
+  "current_page": "Dashboard",
   "dataset_states": {
     "fifa": {
       "visible_columns": [],
@@ -15,14 +15,49 @@
         "text_query": "",
         "categorical_column": "",
         "categorical_value": "",
+        "multi_select_column": "",
+        "multi_select_values": [],
         "numeric_column": "",
         "min_value": "",
-        "max_value": ""
-      }
+        "max_value": "",
+        "date_column": "",
+        "start_date": "",
+        "end_date": ""
+      },
+      "dashboard_widgets": [
+        {
+          "widget_id": "08e7566c-6b29-4860-a5eb-cf7f427ad836",
+          "title": "Rows KPI",
+          "widget_type": "kpi_rows",
+          "size": "small",
+          "pinned": true,
+          "visible": true
+        },
+        {
+          "widget_id": "dd915a84-b0da-44f8-9508-d81ed3d12f9b",
+          "title": "Columns KPI",
+          "widget_type": "kpi_columns",
+          "size": "small",
+          "pinned": false,
+          "visible": true
+        },
+        {
+          "widget_id": "bae414fa-cd75-4c61-80d2-02774b5543c0",
+          "title": "Table Preview",
+          "widget_type": "table_preview",
+          "size": "medium",
+          "pinned": true,
+          "visible": true
+        }
+      ]
     },
     "movie": {
       "visible_columns": [],
       "sort_specs": [
+        {
+          "column": "Release_Date",
+          "ascending": false
+        },
         {
           "column": "Vote_Count",
           "ascending": false
@@ -36,10 +71,49 @@
         "text_query": "",
         "categorical_column": "",
         "categorical_value": "",
+        "multi_select_column": "",
+        "multi_select_values": [],
         "numeric_column": "",
         "min_value": "",
-        "max_value": ""
-      }
+        "max_value": "",
+        "date_column": "",
+        "start_date": "",
+        "end_date": ""
+      },
+      "dashboard_widgets": [
+        {
+          "widget_id": "20d40916-ccb4-4cb3-b864-6f2a5a7aed6c",
+          "title": "Rows KPI",
+          "widget_type": "kpi_rows",
+          "size": "small",
+          "pinned": true,
+          "visible": true
+        },
+        {
+          "widget_id": "c324ba42-bc3a-4abd-8c9b-9f4247ccdf81",
+          "title": "Table Preview",
+          "widget_type": "table_preview",
+          "size": "medium",
+          "pinned": false,
+          "visible": true
+        },
+        {
+          "widget_id": "edca4ccb-02ab-4df3-9c60-d7930a77abd6",
+          "title": "Columns KPI",
+          "widget_type": "kpi_columns",
+          "size": "small",
+          "pinned": false,
+          "visible": true
+        },
+        {
+          "widget_id": "cc6a02fe-cf4f-4d6b-b7e5-99af13cbe72c",
+          "title": "Missing Values KPI",
+          "widget_type": "kpi_missing",
+          "size": "small",
+          "pinned": false,
+          "visible": true
+        }
+      ]
     },
     "social": {
       "visible_columns": [],
@@ -61,10 +135,49 @@
         "text_query": "",
         "categorical_column": "",
         "categorical_value": "",
+        "multi_select_column": "",
+        "multi_select_values": [],
         "numeric_column": "",
         "min_value": "",
-        "max_value": ""
-      }
+        "max_value": "",
+        "date_column": "",
+        "start_date": "",
+        "end_date": ""
+      },
+      "dashboard_widgets": [
+        {
+          "widget_id": "38581146-cbf4-400a-a393-4fd4a34bf39b",
+          "title": "Rows KPI",
+          "widget_type": "kpi_rows",
+          "size": "small",
+          "pinned": true,
+          "visible": true
+        },
+        {
+          "widget_id": "cd994114-95d0-473a-9dc7-33ad13735f7e",
+          "title": "Columns KPI",
+          "widget_type": "kpi_columns",
+          "size": "small",
+          "pinned": false,
+          "visible": true
+        },
+        {
+          "widget_id": "cf0c659d-e3b9-4498-bc27-e61f8eca3f90",
+          "title": "Table Preview",
+          "widget_type": "table_preview",
+          "size": "medium",
+          "pinned": false,
+          "visible": true
+        },
+        {
+          "widget_id": "9d7683ea-0477-4139-b0fa-5050db182747",
+          "title": "Missing Values KPI",
+          "widget_type": "kpi_missing",
+          "size": "small",
+          "pinned": false,
+          "visible": true
+        }
+      ]
     }
   }
 }

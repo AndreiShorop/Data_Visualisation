@@ -1,32 +1,25 @@
 from app.config import (
-    FIFA_CSV,
-    FIFA_REPORT,
-    MOVIE_CSV,
-    MOVIE_REPORT,
-    SOCIAL_CSV,
-    SOCIAL_REPORT,
+    BASE_DIR,
+    DATASETS_CONFIG_PATH,
     SETTINGS_PATH,
 )
-from app.data_loader import load_datasets
 from app.reports.sweetviz_service import SweetvizReportService
+from app.services.dataset_registry_service import DatasetRegistryService
 from app.ui.dashboard_app import DashboardApp
 
 
 def create_dashboard_app() -> DashboardApp:
-    datasets = load_datasets(FIFA_CSV, MOVIE_CSV, SOCIAL_CSV)
-    report_service = SweetvizReportService(
-        {
-            "fifa": FIFA_REPORT,
-            "movie": MOVIE_REPORT,
-            "social": SOCIAL_REPORT,
-        }
-    )
+    registry = DatasetRegistryService(base_dir=BASE_DIR, config_path=DATASETS_CONFIG_PATH)
+    plugins = registry.load_plugins()
+    datasets = registry.load_dataframes(plugins)
+    labels = registry.build_labels(plugins)
+    schema_hints = registry.build_schema_hints(plugins)
+    report_service = SweetvizReportService(registry.build_report_paths(plugins))
+
     return DashboardApp(
-        {
-            "fifa": datasets.fifa,
-            "movie": datasets.movies,
-            "social": datasets.social,
-        },
+        datasets,
+        labels,
+        schema_hints,
         report_service,
         SETTINGS_PATH,
     )
