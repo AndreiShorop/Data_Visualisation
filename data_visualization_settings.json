@@ -1,0 +1,70 @@
+{
+  "selected_dataset": "fifa",
+  "window_geometry": "1920x1009+-8+-8",
+  "current_page": "Details",
+  "dataset_states": {
+    "fifa": {
+      "visible_columns": [],
+      "sort_specs": [
+        {
+          "column": "rating",
+          "ascending": false
+        }
+      ],
+      "filters": {
+        "text_query": "",
+        "categorical_column": "",
+        "categorical_value": "",
+        "numeric_column": "",
+        "min_value": "",
+        "max_value": ""
+      }
+    },
+    "movie": {
+      "visible_columns": [],
+      "sort_specs": [
+        {
+          "column": "Vote_Count",
+          "ascending": false
+        },
+        {
+          "column": "Popularity",
+          "ascending": false
+        }
+      ],
+      "filters": {
+        "text_query": "",
+        "categorical_column": "",
+        "categorical_value": "",
+        "numeric_column": "",
+        "min_value": "",
+        "max_value": ""
+      }
+    },
+    "social": {
+      "visible_columns": [],
+      "sort_specs": [
+        {
+          "column": "sleep_hours",
+          "ascending": false
+        },
+        {
+          "column": "addiction_rank",
+          "ascending": false
+        },
+        {
+          "column": "tiktok_minutes_daily",
+          "ascending": false
+        }
+      ],
+      "filters": {
+        "text_query": "",
+        "categorical_column": "",
+        "categorical_value": "",
+        "numeric_column": "",
+        "min_value": "",
+        "max_value": ""
+      }
+    }
+  }
+}
