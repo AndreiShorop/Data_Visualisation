@@ -146,13 +146,24 @@ elif app_mode == "Dashboard Builder":
                     st.write(f"**{widget['type']}**: {widget['x']} vs {widget['y'] or 'Count'}")
                     w_df = all_dfs[widget['dataset']]
                     
+                    # Optimization: Sample large datasets for faster rendering
+                    MAX_POINTS = 10000
+                    if len(w_df) > MAX_POINTS and widget['type'] in ["Scatter", "Line"]:
+                        w_df = w_df.sample(MAX_POINTS)
+                        st.caption(f"Note: Rendering a sample of {MAX_POINTS} points for better performance.")
+                    
                     fig = None
                     if widget['type'] == "Bar":
-                        fig = px.bar(w_df, x=widget['x'], y=widget['y'])
+                        # For Bar charts, aggregate if there are too many unique categories
+                        if w_df[widget['x']].nunique() > 50:
+                            plot_df = w_df.groupby(widget['x'])[widget['y']].sum().sort_values(ascending=False).head(50).reset_index()
+                            fig = px.bar(plot_df, x=widget['x'], y=widget['y'])
+                        else:
+                            fig = px.bar(w_df, x=widget['x'], y=widget['y'])
                     elif widget['type'] == "Line":
                         fig = px.line(w_df, x=widget['x'], y=widget['y'])
                     elif widget['type'] == "Scatter":
-                        fig = px.scatter(w_df, x=widget['x'], y=widget['y'])
+                        fig = px.scatter(w_df, x=widget['x'], y=widget['y'], render_mode='webgl')
                     elif widget['type'] == "Pie":
                         fig = px.pie(w_df, names=widget['x'])
                     elif widget['type'] == "Histogram":
@@ -164,6 +175,7 @@ elif app_mode == "Dashboard Builder":
                         fig = px.imshow(corr, text_auto=True)
                     
                     if fig:
+                        fig.update_layout(height=400, margin=dict(l=20, r=20, t=40, b=20))
                         st.plotly_chart(fig, use_container_width=True)
                     
                     if st.button(f"Remove Widget {i}", key=f"del_{i}"):
