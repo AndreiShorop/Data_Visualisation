@@ -1,53 +1,133 @@
-# Data Visualisation Dashboard
+# 📊 Analytical Platform Pro
 
-A desktop analytics workspace built with Tkinter, Matplotlib, and Sweetviz.
+![Platform Banner](https://via.placeholder.com/1200x400?text=Analytical+Platform+Pro+v2.0)
 
-This project provides:
-- In-app dashboard visuals (inside Tkinter): pie charts + bar charts + summary metrics
-- Browser reports generated with `sv.analyze(...).show_html(...)` for full Sweetviz profiling
+[![Python Version](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.58%2B-orange.svg)](https://streamlit.io/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Security](https://img.shields.io/badge/security-audited-brightgreen.svg)](#security)
 
-## Datasets
-- FIFA ratings: `data/FIFA/elo_ratings_wc2026.csv`
-- Movies: `data/Movie/mymoviedb.csv`
-- Social media addiction: `data/Social_Media_Addiction/country_wise_analysis_addiction.csv`
+**Analytical Platform Pro** — это комплексное решение для профессионального анализа, визуализации и аудита качества данных. Построенное на базе Streamlit и современных инженерных паттернов, приложение предоставляет инструменты уровня SaaS для работы с табличными данными в реальном времени.
 
-## Project Structure
-- `main.py`: thin application entry point
-- `app/config.py`: file and output paths
-- `app/data_loader.py`: dataset loading and parsing
-- `app/reports/sweetviz_service.py`: Sweetviz report generation service
-- `app/ui/dashboard_app.py`: Tkinter UI with embedded pie/bar charts and overview
-- `html_reports/`: generated Sweetviz HTML output files
-- `docs/DOCUMENTATION.md`: technical documentation
+---
 
-## Installation
-1. Create and activate your environment.
-2. Install dependencies:
+## 🎯 Ключевые возможности
 
+| Модуль | Описание |
+| :--- | :--- |
+| **📁 Interactive Table** | Исследование данных с мощной фильтрацией, глобальным поиском и динамическим отображением. |
+| **🎯 Data Quality** | Глубокий аудит датасетов: поиск пропусков, дубликатов, выбросов и структурных ошибок с расчетом Quality Score. |
+| **🛠️ Dashboard Builder** | Визуальный конструктор графиков (Bar, Line, Scatter, Pie и др.) с сохранением состояния в БД. |
+| **🔄 Dataset Comparison** | Статистическое сравнение двух версий данных, выявление изменений в структуре и значениях. |
+| **📤 Upload Data** | Динамическая загрузка и регистрация новых CSV-файлов без перезагрузки кода. |
+| **🔐 Secure Export** | Экспорт защищенных Excel (Formula Injection Protection) и PDF отчетов. |
+
+---
+
+## 🏗️ Архитектура проекта
+
+Приложение следует принципам **Clean Architecture** и **Service-Oriented Design**, что обеспечивает масштабируемость и легкость тестирования.
+
+```mermaid
+graph TD
+    A[Streamlit UI Layer] --> B[Controller Layer]
+    B --> C[Service Layer]
+    C --> D[Data Access / DB Layer]
+    C --> E[Third-party Services]
+    
+    subgraph Services
+        C1[AuthService]
+        C2[QualityService]
+        C3[ExportService]
+        C4[DatasetRegistry]
+    end
+```
+
+---
+
+## 🛠️ Технологический стек
+
+- **Core:** Python 3.13+, Pandas, NumPy, SciPy
+- **UI:** Streamlit, Plotly, Matplotlib
+- **Security:** Bcrypt, SQL Injection Protection, Formula Injection Sanitization
+- **Reports:** Sweetviz, FPDF2, Openpyxl
+- **Database:** SQLite3
+
+---
+
+## 🚀 Быстрый старт
+
+### 1. Установка окружения
 ```bash
+# Клонирование репозитория
+git clone https://github.com/your-repo/analytical-platform-pro.git
+cd analytical-platform-pro
+
+# Создание виртуального окружения
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Установка зависимостей
 pip install -r requirements.txt
 ```
 
-## Run
+### 2. Запуск приложения
 ```bash
-python main.py
+streamlit run streamlit_app.py
 ```
 
-## Usage
-1. Launch the app.
-2. Click one of the top dataset buttons.
-3. View metrics and charts directly inside the app window.
-4. Click **Generate & Open Sweetviz Report** to create/open the browser report.
+> **Default Access:** 
+> - **Login:** `admin` | **Password:** `admin123`
 
-## Design Principles
-The codebase is intentionally modular and follows clean code and SOLID ideas:
-- Single Responsibility: each module has one clear concern
-- Open/Closed: add new datasets by extending chart/report handlers
-- Dependency Inversion: Tkinter UI depends on data + report-service abstractions
+---
 
-## Extending With a New Dataset
-1. Add file path constants in `app/config.py`.
-2. Add loading logic in `app/data_loader.py`.
-3. Register dataset key and report path in `main.py`.
-4. Add chart rendering handler and button route in `app/ui/dashboard_app.py`.
-5. Sweetviz generation will use the shared service automatically.
+## 📂 Структура проекта
+
+```text
+├── app/
+│   ├── services/     # Бизнес-логика (Auth, Export, Quality, etc.)
+│   ├── reports/      # Генерация HTML и PDF отчетов
+│   ├── models/       # Типизированные структуры данных
+│   ├── ui/           # Компоненты интерфейса
+│   └── config.py     # Глобальные настройки путей
+├── data/             # Наборы данных (FIFA, Movies, Powerlifting)
+├── docs/             # Техническая документация
+├── html_reports/     # Сгенерированные аналитические отчеты
+├── streamlit_app.py  # Точка входа веб-приложения
+└── users.db          # База данных пользователей и виджетов
+```
+
+---
+
+## 🛡️ Безопасность
+
+- **Аутентификация:** Хеширование паролей с использованием `bcrypt`.
+- **Excel Protection:** Автоматическая защита от Formula Injection (префиксация спецсимволов `'`).
+- **Data Isolation:** Виджеты дашбордов привязаны к конкретному пользователю в БД.
+- **Path Sanitization:** Валидация путей при загрузке новых датасетов.
+
+Для подробностей см. [SECURITY.md](docs/SECURITY.md).
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Интеграция с SQL базами данных (PostgreSQL/MySQL).
+- [ ] Расширенный модуль ML-прогнозирования.
+- [ ] Экспорт дашбордов в интерактивный HTML-формат.
+- [ ] Поддержка многопользовательского редактирования одного дашборда.
+
+---
+
+## 🤝 Contributing
+
+Мы приветствуем вклад в проект! Пожалуйста, ознакомьтесь с [CONTRIBUTING.md](docs/CONTRIBUTING.md).
+
+---
+
+## 📄 Лицензия
+
+Распространяется под лицензией MIT. См. `LICENSE` для получения дополнительной информации.
+
+---
+© 2026 Analytical Platform Pro. Разработано профессионалами для профессионалов.

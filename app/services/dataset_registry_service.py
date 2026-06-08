@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -65,3 +66,40 @@ class DatasetRegistryService:
             }
             for plugin in plugins
         }
+
+    def register_new_dataset(self, key: str, label: str, csv_content: bytes, read_csv_options: dict = None) -> bool:
+        """Saves a new CSV file and updates the datasets_config.json file."""
+        try:
+            # 1. Save CSV file
+            safe_key = re.sub(r'[^a-zA-Z0-9_]', '', key.lower())
+            upload_dir = self._base_dir / "data" / "Uploads"
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            
+            csv_filename = f"{safe_key}.csv"
+            csv_path = upload_dir / csv_filename
+            csv_path.write_bytes(csv_content)
+
+            # 2. Update config file
+            config = json.loads(self._config_path.read_text(encoding="utf-8"))
+            
+            # Check if key already exists
+            if any(d["key"] == safe_key for d in config.get("datasets", [])):
+                return False
+
+            new_entry = {
+                "key": safe_key,
+                "label": label,
+                "csv_path": str(Path("data/Uploads") / csv_filename),
+                "report_path": str(Path("html_reports") / f"{safe_key}_report.html"),
+                "read_csv_options": read_csv_options or {},
+                "schema": {
+                    "date_columns": [],
+                    "multi_value_columns": []
+                }
+            }
+            
+            config.setdefault("datasets", []).append(new_entry)
+            self._config_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
+            return True
+        except Exception:
+            return False

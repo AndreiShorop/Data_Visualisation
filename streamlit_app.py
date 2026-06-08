@@ -5,12 +5,14 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 import io
+import re
 
 from app.services.dataset_registry_service import DatasetRegistryService
 from app.services.quality_service import QualityService
 from app.services.comparison_service import ComparisonService
 from app.services.export_service import ExportService
-from app.config import BASE_DIR, DATASETS_CONFIG_PATH
+from app.services.auth_service import AuthService
+from app.config import BASE_DIR, DATASETS_CONFIG_PATH, USERS_DB_PATH
 
 # Page Config
 st.set_page_config(
@@ -20,8 +22,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Auth Initialization
+def get_auth_service():
+    return AuthService(USERS_DB_PATH)
+
+auth_service = get_auth_service()
+
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+    st.session_state.user = None
+
+# Login Screen
+if not st.session_state.authenticated:
+    st.title("🔐 Login to Analytical Platform")
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.form("login_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Login", use_container_width=True)
+            
+            if submit:
+                user = auth_service.verify_user(username, password)
+                if user:
+                    st.session_state.authenticated = True
+                    st.session_state.user = user
+                    # Load widgets from DB on login
+                    st.session_state.widgets = auth_service.get_user_widgets(user.username)
+                    st.success(f"Welcome, {username}!")
+                    st.rerun()
+                else:
+                    st.error("Invalid username or password")
+    st.stop()
+
 # Initialize Services
-@st.cache_resource
 def get_services():
     registry = DatasetRegistryService(BASE_DIR, DATASETS_CONFIG_PATH)
     quality = QualityService()
@@ -37,10 +72,16 @@ if 'widgets' not in st.session_state:
 
 # Sidebar Navigation
 st.sidebar.title("🚀 Navigation")
-app_mode = st.sidebar.radio("Choose Module", ["Data Quality", "Dashboard Builder", "Dataset Comparison"])
+st.sidebar.write(f"Logged in as: **{st.session_state.user.username}**")
+if st.sidebar.button("Logout"):
+    st.session_state.authenticated = False
+    st.session_state.user = None
+    st.rerun()
+
+st.sidebar.divider()
+app_mode = st.sidebar.radio("Choose Module", ["Interactive Table", "Data Quality", "Dashboard Builder", "Dataset Comparison", "Upload Data"])
 
 # Data Loading
-@st.cache_data
 def load_all_datasets():
     plugins = registry.load_plugins()
     return registry.load_dataframes(plugins)
@@ -48,8 +89,42 @@ def load_all_datasets():
 all_dfs = load_all_datasets()
 dataset_options = list(all_dfs.keys())
 
+# --- MODULE 0: INTERACTIVE TABLE ---
+if app_mode == "Interactive Table":
+    st.title("📂 Interactive Table Explorer")
+    selected_ds = st.selectbox("Select Dataset", dataset_options)
+    df = all_dfs[selected_ds]
+
+    # Filters Section
+    with st.expander("🔍 Table Filters & Search", expanded=True):
+        f_col1, f_col2, f_col3 = st.columns([2, 1, 1])
+        
+        # Text Search
+        search_query = f_col1.text_input("Global Search (any column)", "")
+        
+        # Categorical Filter
+        filter_col = f_col2.selectbox("Filter by Column", [None] + list(df.columns))
+        filter_val = None
+        if filter_col:
+            unique_vals = df[filter_col].dropna().unique()
+            filter_val = f_col3.selectbox(f"Value for {filter_col}", [None] + list(unique_vals))
+
+    # Apply Filtering
+    filtered_df = df.copy()
+    if search_query:
+        # Search across all string columns
+        mask = filtered_df.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)
+        filtered_df = filtered_df[mask]
+    
+    if filter_col and filter_val:
+        filtered_df = filtered_df[filtered_df[filter_col] == filter_val]
+
+    # Table Display
+    st.write(f"Showing {len(filtered_df)} of {len(df)} rows")
+    st.dataframe(filtered_df, use_container_width=True, height=600)
+
 # --- MODULE 1: DATA QUALITY ---
-if app_mode == "Data Quality":
+elif app_mode == "Data Quality":
     st.title("🎯 Data Quality Report")
     selected_ds = st.selectbox("Select Dataset to Analyze", dataset_options)
     df = all_dfs[selected_ds]
@@ -119,13 +194,17 @@ elif app_mode == "Dashboard Builder":
         y_axis = st.sidebar.selectbox("Y Axis", [None] + list(df.columns))
     
     if st.sidebar.button("Add Widget"):
-        st.session_state.widgets.append({
+        new_widget = {
             "dataset": selected_ds,
             "type": chart_type,
             "x": x_axis,
-            "y": y_axis,
-            "id": len(st.session_state.widgets)
-        })
+            "y": y_axis
+        }
+        # Save to DB
+        widget_id = auth_service.add_user_widget(st.session_state.user.username, new_widget)
+        new_widget["id"] = widget_id
+        st.session_state.widgets.append(new_widget)
+        st.rerun()
 
     # Display Dashboard
     if not st.session_state.widgets:
@@ -178,7 +257,8 @@ elif app_mode == "Dashboard Builder":
                         fig.update_layout(height=400, margin=dict(l=20, r=20, t=40, b=20))
                         st.plotly_chart(fig, use_container_width=True)
                     
-                    if st.button(f"Remove Widget {i}", key=f"del_{i}"):
+                    if st.button(f"Remove Widget {i}", key=f"del_{widget['id']}"):
+                        auth_service.remove_user_widget(widget['id'], st.session_state.user.username)
                         st.session_state.widgets.pop(i)
                         st.rerun()
 
@@ -229,6 +309,44 @@ elif app_mode == "Dataset Comparison":
                 "Stats_Diff": result.stats_diff
             })
             st.sidebar.download_button("Download Excel", excel_data, "comparison.xlsx")
+
+# --- MODULE 4: UPLOAD DATA ---
+elif app_mode == "Upload Data":
+    st.title("📤 Upload New Dataset")
+    st.write("Upload a CSV file to add it to the platform. Once uploaded, it will be available in all modules.")
+    
+    with st.form("upload_form"):
+        new_dataset_label = st.text_input("Dataset Label (e.g. Sales 2024)", "")
+        uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+        
+        col_sep, col_enc = st.columns(2)
+        delimiter = col_sep.selectbox("CSV Delimiter", [",", ";", "\\t", "|"], help="Select the character that separates columns in your file.")
+        # Handle tab specifically
+        actual_sep = "\t" if delimiter == "\\t" else delimiter
+        
+        submit_upload = st.form_submit_button("Upload and Register", use_container_width=True)
+        
+        if submit_upload:
+            if not new_dataset_label or not uploaded_file:
+                st.error("Please provide both a label and a file.")
+            else:
+                # Create a simple key from label
+                new_key = re.sub(r'[^a-zA-Z0-9_]', '', new_dataset_label.lower().replace(" ", "_"))
+                
+                success = registry.register_new_dataset(
+                    key=new_key,
+                    label=new_dataset_label,
+                    csv_content=uploaded_file.getvalue(),
+                    read_csv_options={"sep": actual_sep}
+                )
+                
+                if success:
+                    st.success(f"Dataset '{new_dataset_label}' uploaded successfully!")
+                    st.info("The application will refresh to load the new data.")
+                    st.cache_data.clear() # Clear cache to force reload
+                    st.rerun()
+                else:
+                    st.error("Failed to register dataset. The key might already exist.")
 
 # Footer
 st.sidebar.divider()

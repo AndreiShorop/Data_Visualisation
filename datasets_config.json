@@ -7,7 +7,9 @@
       "report_path": "html_reports/fifa_dashboard.html",
       "read_csv_options": {},
       "schema": {
-        "date_columns": ["snapshot_date"],
+        "date_columns": [
+          "snapshot_date"
+        ],
         "multi_value_columns": []
       }
     },
@@ -21,8 +23,12 @@
         "on_bad_lines": "skip"
       },
       "schema": {
-        "date_columns": ["Release_Date"],
-        "multi_value_columns": ["Genre"]
+        "date_columns": [
+          "Release_Date"
+        ],
+        "multi_value_columns": [
+          "Genre"
+        ]
       }
     },
     {
@@ -45,7 +51,20 @@
       "schema": {
         "date_columns": [],
         "multi_value_columns": []
-    }
+      }
+    },
+    {
+      "key": "houses_test",
+      "label": "houses_test",
+      "csv_path": "data\\Uploads\\houses_test.csv",
+      "report_path": "html_reports\\houses_test_report.html",
+      "read_csv_options": {
+        "sep": ";"
+      },
+      "schema": {
+        "date_columns": [],
+        "multi_value_columns": []
+      }
     }
   ]
 }
