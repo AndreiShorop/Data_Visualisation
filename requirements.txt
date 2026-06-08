@@ -1,6 +1,11 @@
-numpy 
+﻿numpy
 pandas
-seaborn 
+seaborn
 scikit-learn
 matplotlib
 sweetviz
+streamlit
+plotly
+openpyxl
+fpdf2
+scipy

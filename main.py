@@ -1,3 +1,5 @@
+import sys
+import subprocess
 from app.config import (
     BASE_DIR,
     DATASETS_CONFIG_PATH,
@@ -26,8 +28,14 @@ def create_dashboard_app() -> DashboardApp:
 
 
 def main() -> None:
-    app = create_dashboard_app()
-    app.run()
+    if len(sys.argv) > 1 and sys.argv[1] == "--web":
+        print("Starting Analytical Platform Pro (Web)...")
+        subprocess.run(["streamlit", "run", "streamlit_app.py"])
+    else:
+        print("Starting Legacy Dashboard (Desktop)...")
+        print("To run the new Analytical Platform, use: python main.py --web")
+        app = create_dashboard_app()
+        app.run()
 
 
 if __name__ == "__main__":
