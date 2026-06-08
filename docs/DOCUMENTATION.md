@@ -1,63 +1,63 @@
-# Technical Documentation
+# Technical Documentation - Analytical Platform Pro
 
 ## 1. Overview
-This application renders dashboard charts inside a Tkinter desktop app and generates Sweetviz HTML reports in the browser on demand.
+This application is a full-scale analytical platform for CSV data, featuring automated quality assessment, interactive dashboard building, and dataset version comparison.
 
 Flow:
-1. `main.py` loads datasets.
-2. `DashboardApp` displays in-app metrics and pie/bar visualizations for selected dataset.
-3. `SweetvizReportService` generates HTML report for selected dataset.
-4. Browser opens the generated report from `html_reports/`.
+1. `streamlit_app.py` serves as the primary entry point.
+2. `DatasetRegistryService` manages dynamic data indexing.
+3. Modules:
+   - **Data Quality**: Automated DQ scoring and cleaning recommendations.
+   - **Dashboard Builder**: Drag-and-drop style visualization constructor using Plotly.
+   - **Dataset Comparison**: Differential analysis between two file versions.
 
-## 2. Architecture
+## 2. Architecture (V2.0)
 
 ### Entry Layer
-- `main.py`
-- Responsibility: wiring and bootstrapping only
+- `streamlit_app.py` (Modern Web UI)
+- `main.py` (Legacy Launcher)
 
-### Configuration Layer
-- `app/config.py`
-- Responsibility: centralized paths and constants
+### Service Layer
+- `app/services/quality_service.py`: Logic for data validation and Quality Score (0-100).
+- `app/services/comparison_service.py`: Logic for row/column/cell diffs.
+- `app/services/export_service.py`: PDF (Quality) and Excel (Comparison) exports.
+- `app/services/dataset_registry_service.py`: Dynamic dataset loading.
 
 ### Data Layer
-- `app/data_loader.py`
-- Responsibility: CSV ingestion and parser behavior
-- Note: movie data uses `engine="python"` and `on_bad_lines="skip"` for malformed rows
-
-### Domain/Report Layer
-- `app/reports/sweetviz_service.py`
-- Responsibility: generate Sweetviz HTML output for a selected dataset key
-
-### UI Layer
-- `app/ui/dashboard_app.py`
-- Responsibility: Tkinter controls, selected dataset state, overview text, in-app charts
+- `app/data_loader.py`: Specialized loaders (e.g., tolerant parsing for Movie data).
+- `data/`: Local storage for source CSV files.
 
 ## 3. SOLID Mapping
-- Single Responsibility Principle:
-  each module has one reason to change (data loading, Sweetviz generation, or UI).
-- Open/Closed Principle:
-  new datasets are added by extending dataset handlers and chart routes.
-- Liskov Substitution Principle:
-  dataset-specific chart logic follows a consistent selection and rendering pattern.
-- Interface Segregation Principle:
-  focused services (`load_datasets`, `generate_report`) expose minimal interfaces.
-- Dependency Inversion Principle:
-  UI depends on provided datasets and `SweetvizReportService`, not on file-system details.
+- **Single Responsibility**: Each service handles a distinct analytical domain.
+- **Open/Closed**: New chart types or quality metrics can be added to services without modifying the core UI logic.
+- **Liskov Substitution**: Different datasets are treated as generic Pandas objects within the builder.
+- **Interface Segregation**: Focused services provide clean APIs for UI consumption.
+- **Dependency Inversion**: The UI layer depends on high-level services through the registry.
 
-## 4. Report Outputs
-Generated files:
-- `html_reports/fifa_dashboard.html`
-- `html_reports/movie_dashboard.html`
-- `html_reports/social_media_addiction_dashboard.html`
+## 4. Analytical Modules
 
-Each file is produced by Sweetviz (`sv.analyze(...).show_html(...)`) and includes automated profiling visuals.
+### 4.1 Data Quality Report
+Analyzes missing values, duplicates, outliers (IQR), and data types.
+Outputs:
+- **Quality Score**: 0-100 metric.
+- **Issue Breakdown**: Severity-coded list (High/Medium/Low).
+- **Export**: PDF summary.
 
-## 5. Error Handling and Robustness
-- Movie dataset parser uses tolerant mode for malformed CSV records.
-- Chart rendering checks required columns and gracefully skips unavailable visuals.
+### 4.2 Interactive Dashboard Builder
+Professional "Power BI" style layout:
+- KPI cards for global metrics.
+- Multi-chart support (Bar, Line, Scatter, Pie, Histogram, Heatmap, Boxplot).
+- Interactive widget management (Add/Remove/Filter).
 
-## 6. Future Improvements
-- Add logging and structured exceptions.
-- Add unit tests for chart rendering helpers and Sweetviz service.
-- Add schema validation for input datasets.
-- Add caching if datasets grow significantly.
+### 4.3 Dataset Comparison
+Tracks changes between file versions:
+- Structural changes (Added/Removed columns).
+- Statistical drift (Mean, Std, Max shifts).
+- Row-level alignment via key columns.
+- Export: Full Excel diff report.
+
+## 5. Deployment
+To run the platform:
+```powershell
+streamlit run streamlit_app.py
+```
