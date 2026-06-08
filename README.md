@@ -123,15 +123,4 @@ streamlit run streamlit_app.py
 
 ---
 
-## 🤝 Contributing
-
-Мы приветствуем вклад в проект! Пожалуйста, ознакомьтесь с [CONTRIBUTING.md](docs/CONTRIBUTING.md).
-
----
-
-## 📄 Лицензия
-
-Распространяется под лицензией MIT. См. `LICENSE` для получения дополнительной информации.
-
----
 © 2026 Analytical Platform Pro. Разработано профессионалами для профессионалов.
