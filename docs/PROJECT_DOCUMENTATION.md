@@ -42,6 +42,7 @@ graph LR
 - **Основные методы**:
     - `verify_user(username, password)`: Аутентификация через bcrypt.
     - `get_user_widgets(username)`: Загрузка персонального дашборда.
+- **База данных**: Используется SQLite. Схема инициализируется автоматически при первом обращении, но рекомендуется использовать [init_database.py](init_database.py).
 - **Зависимости**: `sqlite3`, `bcrypt`.
 
 ### `ExportService`

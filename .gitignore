@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Databases
+users.db
+
+# Streamlit
+.streamlit/
+
+# Project Specific
+html_reports/
+data/Uploads/*.csv
+!data/Uploads/.gitkeep
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo

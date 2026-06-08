@@ -71,13 +71,17 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Запуск приложения
+### 2. Инициализация базы данных
+Перед первым запуском необходимо создать базу данных и пользователя:
+```bash
+python init_database.py
+```
+> **Default Access:** `admin` | `admin123`
+
+### 3. Запуск приложения
 ```bash
 streamlit run streamlit_app.py
 ```
-
-> **Default Access:** 
-> - **Login:** `admin` | **Password:** `admin123`
 
 ---
 
