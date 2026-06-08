@@ -35,6 +35,17 @@
         "date_columns": [],
         "multi_value_columns": []
       }
+    },
+    {
+      "key": "power",
+      "label": "Power",
+      "csv_path": "data/Powerlifting/powerlifting.csv",
+      "report_path": "html_reports/power_dashboard.html",
+      "read_csv_options": {},
+      "schema": {
+        "date_columns": [],
+        "multi_value_columns": []
+    }
     }
   ]
 }

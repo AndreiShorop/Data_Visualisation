@@ -1,7 +1,7 @@
 {
-  "selected_dataset": "social",
-  "window_geometry": "1924x1009+-8+0",
-  "current_page": "Dashboard",
+  "selected_dataset": "power",
+  "window_geometry": "1920x1009+-8+-8",
+  "current_page": "Table",
   "dataset_states": {
     "fifa": {
       "visible_columns": [],
@@ -174,6 +174,66 @@
           "title": "Missing Values KPI",
           "widget_type": "kpi_missing",
           "size": "small",
+          "pinned": false,
+          "visible": true
+        }
+      ]
+    },
+    "power": {
+      "visible_columns": [],
+      "sort_specs": [
+        {
+          "column": "TotalKg",
+          "ascending": false
+        },
+        {
+          "column": "Wilks",
+          "ascending": false
+        }
+      ],
+      "filters": {
+        "text_query": "",
+        "categorical_column": "Name",
+        "categorical_value": "Dave Hoff",
+        "multi_select_column": "",
+        "multi_select_values": [],
+        "numeric_column": "",
+        "min_value": "",
+        "max_value": "",
+        "date_column": "",
+        "start_date": "",
+        "end_date": ""
+      },
+      "dashboard_widgets": [
+        {
+          "widget_id": "5045369b-9cc7-4d00-84b0-9031fe501dc4",
+          "title": "Rows KPI",
+          "widget_type": "kpi_rows",
+          "size": "small",
+          "pinned": true,
+          "visible": true
+        },
+        {
+          "widget_id": "70526962-99f2-4054-add3-7c3730777d2f",
+          "title": "Columns KPI",
+          "widget_type": "kpi_columns",
+          "size": "small",
+          "pinned": false,
+          "visible": true
+        },
+        {
+          "widget_id": "079cf12e-f4e4-4532-966b-0c4c0ef55b63",
+          "title": "Missing Values KPI",
+          "widget_type": "kpi_missing",
+          "size": "small",
+          "pinned": false,
+          "visible": true
+        },
+        {
+          "widget_id": "be73d1bd-f48c-44d7-ba96-baa02d2ca9f7",
+          "title": "Table Preview",
+          "widget_type": "table_preview",
+          "size": "medium",
           "pinned": false,
           "visible": true
         }

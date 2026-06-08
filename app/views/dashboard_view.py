@@ -187,11 +187,11 @@ class DashboardView:
                     self._artists_to_filter[bar] = ("Genre", str(genre))
             ax2.set_title("Top 10 Genres")
 
-        else:
+        elif key == "social":
             scores = pd.to_numeric(df.get("addiction_score", pd.Series(dtype=float)), errors="coerce")
             tiers = pd.cut(scores, bins=[-1, 55, 60, 65, 100], labels=["Low", "Moderate", "High", "Critical"], include_lowest=True)
             tier_counts = tiers.value_counts().sort_index()
-            if not tier_counts.empty:
+            if not tier_counts.empty and tier_counts.sum() > 0:
                 wedges, _ = ax1.pie(tier_counts.values, labels=tier_counts.index, startangle=110)
                 for wedge, label in zip(wedges, tier_counts.index):
                     wedge.set_picker(True)
@@ -208,6 +208,50 @@ class DashboardView:
                     bar.set_picker(True)
                     self._artists_to_filter[bar] = ("country", str(country))
             ax2.set_title("Top 10 Countries by Addiction Score")
+        elif key == "power":
+            # Левый график: Распределение по оборудованию
+            equipment = df.get("Equipment", pd.Series(dtype=str)).dropna().astype(str).value_counts().head(8)
+            if not equipment.empty:
+                wedges, _ = ax1.pie(equipment.values, labels=equipment.index, startangle=110)
+                for wedge, label in zip(wedges, equipment.index):
+                    wedge.set_picker(True)
+                    self._artists_to_filter[wedge] = ("Equipment", str(label))
+            ax1.set_title("Equipment Distribution")
+            if "TotalKg" in df.columns:
+                top = df.copy()
+                top["TotalKg"] = pd.to_numeric(top["TotalKg"], errors="coerce")
+                # Сортируем именно по килограммам
+                top = top.dropna(subset=["TotalKg"]).sort_values("TotalKg", ascending=False).head(10)
+                
+                # Используем Имя атлета для подписи, если оно есть, иначе MeetID
+                label_col = "Name" if "Name" in df.columns else "MeetID" if "MeetID" in df.columns else "index"
+                
+                bars = ax2.bar(top[label_col].astype(str), top["TotalKg"], color="#4f46e5")
+                ax2.tick_params(axis="x", labelrotation=35)
+                for bar, label in zip(bars, top[label_col]):
+                    bar.set_picker(True)
+                    self._artists_to_filter[bar] = (label_col, str(label))
+            ax2.set_title("Top 10 Athletes by Total KG")
+
+        else:
+            # Fallback for generic datasets
+            obj_cols = df.select_dtypes(include=["object"]).columns
+            if len(obj_cols) > 0:
+                col = obj_cols[0]
+                counts = df[col].value_counts().head(8)
+                if not counts.empty and counts.sum() > 0:
+                    ax1.pie(counts.values, labels=counts.index, startangle=110)
+                ax1.set_title(f"Distribution of {col}")
+            
+            num_cols = df.select_dtypes(include=["number"]).columns
+            if len(num_cols) > 0:
+                col = num_cols[0]
+                top = df.nlargest(10, col) if col in df.columns else pd.DataFrame()
+                if not top.empty:
+                    label_col = obj_cols[0] if len(obj_cols) > 0 else top.index.astype(str)
+                    ax2.bar(top[label_col].astype(str) if len(obj_cols) > 0 else top.index.astype(str), top[col], color="#6366f1")
+                    ax2.tick_params(axis="x", labelrotation=35)
+                ax2.set_title(f"Top 10 by {col}")
 
         fig.tight_layout(pad=2.2)
         self._draw_figure(fig)
